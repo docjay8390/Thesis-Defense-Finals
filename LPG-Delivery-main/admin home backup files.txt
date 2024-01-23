@@ -1,0 +1,118 @@
+<?php
+session_start();
+include("config.php");
+
+if (!isset($_SESSION['valid'])) {
+    header("Location: admin-login.php");
+}
+
+require("connect.php");
+
+$msg = "";
+
+if (isset($_POST['new']) && $_POST['new'] == 0) {
+    $Fullname = $_POST["Fullname"];
+    $Contact = $_POST["Contact"];
+    $Addresss = $_POST["Addresss"];
+    $Brand = $_POST["Brand"];
+    $Quantity = $_POST["Quantity"];
+
+    // Calculate Total based on Brand
+    switch ($Brand) {
+        case 'petron':
+            $UnitPrice = 899;
+            break;
+
+        case 'calor':
+            $UnitPrice = 799;
+            break;
+
+        default:
+            // Default Unit Price if the brand is not recognized
+            $UnitPrice = 899;
+    }
+
+    $Total = $Quantity * $UnitPrice;
+
+    $insert_query = "INSERT INTO `orders` (`Fullname`, `Contact`, `Addresss`, `Brand`, `Quantity`, `Total`)
+                    VALUES ('$Fullname', '$Contact', '$Addresss', '$Brand', '$Quantity', '$Total')";
+
+    if (mysqli_query($connection, $insert_query)) {
+        $msg = "Record was successfully added to the database!";
+    } else {
+        $msg = "Error: " . mysqli_error($connection);
+    }
+}
+
+$result = mysqli_query($connection, 'SELECT id, Fullname, Contact, Addresss, Brand, Quantity, Total FROM orders');
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style/style.css">
+    <link rel="stylesheet" href="./style/styles.css">
+    <title>Admin Home</title>
+</head>
+
+<body>
+    <!-- Your HTML and other content here -->
+
+    <h1 style="color: white; font-size: 3rem;">Orders</h1>
+    <br>
+    <table border="3" style="border: solid red;">
+        <thead>
+            <tr>
+                <td>ID No.</td>
+                <td colspan="3">Full Name</td>
+                <td colspan="3">Contact Number</td>
+                <td colspan="3">Address</td>
+                <td colspan="3">Brand</td>
+                <td colspan="3">Quantity</td>
+                <td colspan="3">Total</td>
+                <td colspan="3">Delete</td>
+            </tr>
+        </thead>
+
+        <?php
+        while ($row = mysqli_fetch_array($result)) {
+        ?>
+            <tr>
+                <td><?php echo $row['id']; ?></td>
+                <td colspan="3"><?php echo $row['Fullname']; ?></td>
+                <td colspan="3"><?php echo $row['Contact']; ?></td>
+                <td colspan="3"><?php echo $row['Addresss']; ?></td>
+                <td colspan="3"><?php echo $row['Brand']; ?></td>
+                <td colspan="3"><?php echo $row['Quantity']; ?></td>
+                <td colspan="3">
+    <?php
+    if ($row['Brand'] === 'Petron') {
+        $unitPrice = 899;
+    } elseif ($row['Brand'] === 'Calor') {
+        $unitPrice = 799;
+    } else {
+        echo 'Invalid Brand';
+        // You may want to handle this case differently based on your requirements
+        // For example, you could set $unitPrice to a default value.
+        // $unitPrice = 899;
+    }
+
+    if (isset($unitPrice)) {
+        $total = $row['Quantity'] * $unitPrice;
+        echo number_format($total, 2);
+    }
+    ?>
+</td>
+
+                <td><a href="delete.php?id=<?php echo $row["id"]; ?>">Delete</a></td>
+            </tr>
+        <?php } ?>
+
+    </table>
+</body>
+
+</html>
